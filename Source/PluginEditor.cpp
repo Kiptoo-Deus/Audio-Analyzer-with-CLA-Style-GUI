@@ -2,9 +2,12 @@
 
 AudioAnalyzerCLAEditor::AudioAnalyzerCLAEditor(AudioAnalyzerCLA& p)
     : AudioProcessorEditor(&p), processor(p) {
-    // Customize CLA look
+    // CLA meter styling
     lnf.setColour(foleys::LevelMeter::lmMeterGradientLowColour, juce::Colours::green);
+    lnf.setColour(foleys::LevelMeter::lmMeterGradientMidColour, juce::Colours::yellow);
     lnf.setColour(foleys::LevelMeter::lmMeterGradientMaxColour, juce::Colours::red);
+    lnf.setColour(foleys::LevelMeter::lmBackgroundColour, juce::Colour(0xff2a2a2a));
+    lnf.setColour(foleys::LevelMeter::lmOutlineColour, juce::Colours::grey);
     meter.setLookAndFeel(&lnf);
 
     gainKnob.setSliderStyle(juce::Slider::Rotary);
@@ -33,7 +36,7 @@ AudioAnalyzerCLAEditor::AudioAnalyzerCLAEditor(AudioAnalyzerCLA& p)
     addAndMakeVisible(meter);
 
     setSize(800, 600);
-    startTimerHz(30); // 30 FPS refresh
+    startTimerHz(30);
 }
 
 AudioAnalyzerCLAEditor::~AudioAnalyzerCLAEditor() {
@@ -52,5 +55,5 @@ void AudioAnalyzerCLAEditor::resized() {
     gainLabel.setBounds(50, 130, 80, 20);
     rangeKnob.setBounds(150, 50, 80, 80);
     rangeLabel.setBounds(150, 130, 80, 20);
-    meter.setBounds(300, 50, 60, 200); // Stereo meters
+    meter.setBounds(300, 50, 60, 200);
 }
