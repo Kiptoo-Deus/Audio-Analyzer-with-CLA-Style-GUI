@@ -5,15 +5,21 @@ AudioAnalyzerCLA::AudioAnalyzerCLA()
     : AudioProcessor(BusesProperties()
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
         .withOutput("Output", juce::AudioChannelSet::stereo(), true)),
-    inputBuffer(2, 512), fftBuffer(fft.getSize() * 2), spectrumMagnitudes(numBars, 0.0f) {}
+    inputBuffer(2, 512), fftBuffer(fft.getSize() * 2), spectrumMagnitudes(numBars, 0.0f),
+    scopeBuffer(1, 1024) { // Mono scope, 1024 samples
+    scopeBuffer.clear();
+}
 
 AudioAnalyzerCLA::~AudioAnalyzerCLA() {}
 
 void AudioAnalyzerCLA::prepareToPlay(double sampleRate, int samplesPerBlock) {
     meterSource.resize(2, sampleRate * 0.1 / samplesPerBlock);
     inputBuffer.setSize(2, samplesPerBlock);
-    fftBuffer.resize(fft.getSize() * 2); // Real + imaginary
+    fftBuffer.resize(fft.getSize() * 2);
     spectrumMagnitudes.resize(numBars, 0.0f);
+    scopeBuffer.setSize(1, 1024);
+    scopeBuffer.clear();
+    scopePos = 0;
 }
 
 void AudioAnalyzerCLA::releaseResources() {}
@@ -24,7 +30,7 @@ void AudioAnalyzerCLA::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
     auto* outData = buffer.getArrayOfWritePointers();
     int numSamples = buffer.getNumSamples();
 
-    // Fill input buffer
+    // Fill input buffer and scope
     for (int i = 0; i < numSamples; ++i) {
         float sampleL = inData[0][i];
         float sampleR = inData[1][i];
@@ -32,18 +38,22 @@ void AudioAnalyzerCLA::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
         inputBuffer.setSample(1, i, sampleR);
         outData[0][i] = sampleL;
         outData[1][i] = sampleR;
+
+        // Mono scope - average channels
+        float scopeSample = (sampleL + sampleR) * 0.5f;
+        scopeBuffer.setSample(0, scopePos, scopeSample);
+        scopePos = (scopePos + 1) % scopeBuffer.getNumSamples();
     }
 
     meterSource.measureBlock(inputBuffer);
 
-    // FFT - Average stereo channels
+    // FFT
     int fftSize = fft.getSize();
     if (numSamples >= fftSize) {
         std::fill(fftBuffer.begin(), fftBuffer.end(), 0.0f);
         for (int i = 0; i < fftSize; ++i) {
-            fftBuffer[i] = (inputBuffer.getSample(0, i) + inputBuffer.getSample(1, i)) * 0.5f; // Mono
+            fftBuffer[i] = (inputBuffer.getSample(0, i) + inputBuffer.getSample(1, i)) * 0.5f;
         }
-
         fft.performRealOnlyForwardTransform(fftBuffer.data());
         for (int i = 0; i < numBars; ++i) {
             int binStart = i * (fftSize / 2) / numBars;
@@ -54,7 +64,7 @@ void AudioAnalyzerCLA::processBlock(juce::AudioBuffer<float>& buffer, juce::Midi
                 float imag = fftBuffer[2 * j + 1];
                 mag += std::sqrt(real * real + imag * imag);
             }
-            spectrumMagnitudes[i] = mag / (binEnd - binStart); // Average magnitude
+            spectrumMagnitudes[i] = mag / (binEnd - binStart);
         }
     }
 }

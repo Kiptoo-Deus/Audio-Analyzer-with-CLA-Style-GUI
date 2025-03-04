@@ -10,7 +10,7 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
-    void timerCallback() override { meter.repaint(); repaint(); } // Refresh meter + spectrum
+    void timerCallback() override { meter.repaint(); repaint(); }
 
 private:
     AudioAnalyzerCLA& processor;
@@ -20,7 +20,8 @@ private:
     juce::Label rangeLabel;
     foleys::LevelMeter meter{ foleys::LevelMeter::Default };
     foleys::LevelMeterLookAndFeel lnf;
-    std::vector<juce::Rectangle<float>> spectrumBars; // FFT bars
+    std::vector<juce::Rectangle<float>> spectrumBars;
+    juce::Path scopePath; // Yellow waveform
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioAnalyzerCLAEditor)
 };

@@ -44,7 +44,7 @@ AudioAnalyzerCLAEditor::~AudioAnalyzerCLAEditor() {
 }
 
 void AudioAnalyzerCLAEditor::paint(juce::Graphics& g) {
-    g.fillAll(juce::Colour(0xff2a2a2a)); // dark gray
+    g.fillAll(juce::Colour(0xff2a2a2a)); // CLA dark gray
 
     // Spectrum bars
     const auto& magnitudes = processor.getSpectrum();
@@ -56,6 +56,23 @@ void AudioAnalyzerCLAEditor::paint(juce::Graphics& g) {
             juce::Colours::cyan, spectrumBars[i].getX(), spectrumBars[i].getY(), false));
         g.fillRect(spectrumBars[i]);
     }
+
+    // Scope
+    const auto& scopeData = processor.getScopeBuffer();
+    int scopeSamples = scopeData.getNumSamples();
+    float scopeHeight = 100.0f;
+    float scopeY = 450.0f; // Below spectrum
+    scopePath.clear();
+    for (int i = 0; i < scopeSamples - 1; ++i) {
+        float x1 = juce::jmap(float(i), 0.0f, float(scopeSamples), 300.0f, 700.0f);
+        float y1 = juce::jmap(scopeData.getSample(0, i), -1.0f, 1.0f, scopeY + scopeHeight, scopeY);
+        float x2 = juce::jmap(float(i + 1), 0.0f, float(scopeSamples), 300.0f, 700.0f);
+        float y2 = juce::jmap(scopeData.getSample(0, (i + 1) % scopeSamples), -1.0f, 1.0f, scopeY + scopeHeight, scopeY);
+        if (i == 0) scopePath.startNewSubPath(x1, y1);
+        else scopePath.lineTo(x2, y2);
+    }
+    g.setColour(juce::Colours::yellow);
+    g.strokePath(scopePath, juce::PathStrokeType(1.0f));
 
     g.setColour(juce::Colours::grey);
     g.drawRect(getLocalBounds(), 2.0f);
