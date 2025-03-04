@@ -27,11 +27,16 @@ public:
     void getStateInformation(juce::MemoryBlock&) override {}
     void setStateInformation(const void*, int) override {}
 
-    foleys::LevelMeterSource& getMeterSource() { return meterSource; } // Expose to editor
-
+    foleys::LevelMeterSource& getMeterSource() { return meterSource; }
+    const std::vector<float>& getSpectrum() const { return spectrumMagnitudes; } // Expose spectrum
+    static const int numBars = 20; // Number of spectrum bars
 private:
     foleys::LevelMeterSource meterSource;
     juce::AudioBuffer<float> inputBuffer;
+    juce::dsp::FFT fft{ 10 }; // 2^10 = 1024 points
+    std::vector<float> fftBuffer;
+    std::vector<float> spectrumMagnitudes; // FFT results
+   
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioAnalyzerCLA)
 };

@@ -1,8 +1,7 @@
 #include "PluginEditor.h"
 
 AudioAnalyzerCLAEditor::AudioAnalyzerCLAEditor(AudioAnalyzerCLA& p)
-    : AudioProcessorEditor(&p), processor(p) {
-    // CLA meter styling
+    : AudioProcessorEditor(&p), processor(p), spectrumBars(processor.numBars) {
     lnf.setColour(foleys::LevelMeter::lmMeterGradientLowColour, juce::Colours::green);
     lnf.setColour(foleys::LevelMeter::lmMeterGradientMidColour, juce::Colours::yellow);
     lnf.setColour(foleys::LevelMeter::lmMeterGradientMaxColour, juce::Colours::red);
@@ -46,8 +45,20 @@ AudioAnalyzerCLAEditor::~AudioAnalyzerCLAEditor() {
 
 void AudioAnalyzerCLAEditor::paint(juce::Graphics& g) {
     g.fillAll(juce::Colour(0xff2a2a2a)); // dark gray
+
+    // Spectrum bars
+    const auto& magnitudes = processor.getSpectrum();
+    float spectrumHeight = 100.0f;
+    for (int i = 0; i < spectrumBars.size(); ++i) {
+        float height = juce::jmap(magnitudes[i], 0.0f, 0.1f, 0.0f, spectrumHeight);
+        spectrumBars[i].setSize(15, height);
+        g.setGradientFill(juce::ColourGradient(juce::Colours::blue, spectrumBars[i].getX(), spectrumBars[i].getBottom(),
+            juce::Colours::cyan, spectrumBars[i].getX(), spectrumBars[i].getY(), false));
+        g.fillRect(spectrumBars[i]);
+    }
+
     g.setColour(juce::Colours::grey);
-    g.drawRect(getLocalBounds(), 2.0f); // Border
+    g.drawRect(getLocalBounds(), 2.0f);
 }
 
 void AudioAnalyzerCLAEditor::resized() {
@@ -56,4 +67,7 @@ void AudioAnalyzerCLAEditor::resized() {
     rangeKnob.setBounds(150, 50, 80, 80);
     rangeLabel.setBounds(150, 130, 80, 20);
     meter.setBounds(300, 50, 60, 200);
+    for (int i = 0; i < spectrumBars.size(); ++i) {
+        spectrumBars[i].setPosition(300 + i * 20, 300);
+    }
 }
